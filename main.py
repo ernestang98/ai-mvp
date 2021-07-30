@@ -8,6 +8,10 @@ import tensorflow as tf
 from threading import Thread
 import cv2
 import math
+import logging
+logger = logging.getLogger('Beep-PCR-Test-Kit')
+logger.setLevel(logging.DEBUG)
+logging.basicConfig(format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
 
 # https://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
 # https://www.pyimagesearch.com/2017/02/06/faster-video-file-fps-with-cv2-videocapture-and-opencv/
@@ -18,6 +22,7 @@ NUMBER_OF_ANGLES_TO_CALIBRATE = 5
 DURATION_TO_STABILITZE = 5
 stabilize_position = 0
 calibrate_angle = []
+is_recording = False
 
 
 class WebcamVideoStream:
@@ -150,7 +155,7 @@ class FaceDetector:
 
             cv2.putText(image, label, (facebox[0], facebox[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
         except IndexError:
-            print("Cannot detect face!!!!")
+            logger.error("Cannot detect face!!!!")
 
 
 class MarkDetector:
@@ -419,21 +424,25 @@ while True:
         left_faces = left_cascade.detectMultiScale(cv2.flip(img, 1), scaleFactor=None, minNeighbors=5)
         right_faces = left_cascade.detectMultiScale(img, scaleFactor=None, minNeighbors=5)
 
-        if front_faces is () and left_faces is () and right_faces is ():
-            print("You are looking up or down, please look at the camera!")
+        if front_faces is () and left_faces is () and right_faces is () and is_recording is False:
+            logger.warning("You are looking up or down, please look at the camera!")
+            logger.info("Setting stabilize count back to 0 and emptying calibrated angles")
             calibrate_angle = []
             stabilize_position = 0
+            is_recording = False
         else:
             if front_faces is not ():
-                print("You are facing forward, tilt your head to YOUR left/right please")
+                logger.warning("You are facing forward, tilt your head to YOUR left/right please")
+                logger.info("Setting stabilize count back to 0 and emptying calibrated angles")
                 calibrate_angle = []
                 stabilize_position = 0
+                is_recording = False
             else:
                 if left_faces is not () or right_faces is not () and stabilize_position < DURATION_TO_STABILITZE:
                     stabilize_position += 1
 
-        print(stabilize_position)
         if stabilize_position >= DURATION_TO_STABILITZE:
+            logger.info(f"Camera Stabilizing, calibrating angles {len(calibrate_angle)}")
             faceboxes = mark_detector.extract_cnn_facebox(img)
             for facebox in faceboxes:
                 face_img = img[facebox[1]: facebox[3], facebox[0]: facebox[2]]
@@ -502,20 +511,24 @@ while True:
                 # cv2.line(img, tuple(x1), tuple(x2), (255, 255, 0), 2)
                 # cv2.putText(img, str(ang2), tuple(x1), font, 2, (255, 255, 128), 3)
 
-
-                print(ang1)
+                logger.info(f'Angle: {ang1}')
 
                 if len(calibrate_angle) >= NUMBER_OF_ANGLES_TO_CALIBRATE:
                     # proceed to calibrate
-                    print("proceed to calibrate")
-                    print(np.mean(calibrate_angle))
+                    logger.info("proceed to calibrate")
+                    is_recording = True
+                    logger.info(np.mean(calibrate_angle))
                 else:
                     if len(calibrate_angle) == 0 or \
                             np.mean(calibrate_angle) - 5 <= ang1 <= np.mean(calibrate_angle) + 5:
                         calibrate_angle.append(ang1)
                     else:
-                        print("You are tilting your head too much")
+                        logger.warning("You are tilting your head too much")
+                        logger.warning("Resetting calibrated angles")
                         calibrate_angle = []
+
+        else:
+            logger.info(f'Stabilising position {stabilize_position}')
 
         cv2.imshow("Normal Frame", cv2.flip(img, 1))
 
