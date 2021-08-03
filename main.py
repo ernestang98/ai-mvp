@@ -9,6 +9,7 @@ from threading import Thread
 import cv2
 import math
 import logging
+
 logger = logging.getLogger('Beep-PCR-Test-Kit')
 logger.setLevel(logging.DEBUG)
 logging.basicConfig(format="%(asctime)s — %(name)s — %(levelname)s — %(funcName)s:%(lineno)d — %(message)s")
@@ -327,7 +328,7 @@ class MarkDetector:
             cv2.circle(image, (int(mark[0]), int(mark[1])), 2, color, -1, cv2.LINE_AA)
 
 
-def draw_annotation_box(img_to_draw_box_on, x_rotation_vector, x_translation_vector, x_camera_matrix,
+def draw_annotation_box(img_to_draw_box_on, rec, x_rotation_vector, x_translation_vector, x_camera_matrix,
                         color=(255, 255, 0), line_width=2):
     def helper_function(array, the_size, depth):
         array.append((-the_size, -the_size, depth))
@@ -369,10 +370,11 @@ def draw_annotation_box(img_to_draw_box_on, x_rotation_vector, x_translation_vec
 
     k = (point_2d[5] + point_2d[8]) // 2
 
-    # cv2.polylines(img_to_draw_box_on, [point_2d], True, color, line_width, cv2.LINE_AA)
-    # cv2.line(img_to_draw_box_on, tuple(point_2d[1]), tuple(point_2d[6]), color, line_width, cv2.LINE_AA)
-    # cv2.line(img_to_draw_box_on, tuple(point_2d[2]), tuple(point_2d[7]), color, line_width, cv2.LINE_AA)
-    # cv2.line(img_to_draw_box_on, tuple(point_2d[3]), tuple(point_2d[8]), color, line_width, cv2.LINE_AA)
+    cv2.polylines(img_to_draw_box_on, [point_2d[5:10]], True, color, line_width, cv2.LINE_AA)
+    cv2.line(img_to_draw_box_on, tuple(rec[0]), tuple(point_2d[6]), color, line_width, cv2.LINE_AA)
+    cv2.line(img_to_draw_box_on, tuple(rec[1]), tuple(point_2d[7]), color, line_width, cv2.LINE_AA)
+    cv2.line(img_to_draw_box_on, tuple(rec[3]), tuple(point_2d[8]), color, line_width, cv2.LINE_AA)
+    cv2.line(img_to_draw_box_on, tuple(rec[2]), tuple(point_2d[9]), color, line_width, cv2.LINE_AA)
 
     return point_2d[2], k
 
@@ -417,34 +419,37 @@ while True:
     if img is not ():
 
         # make sure you're facing the left/right/forward (i would suggest left/right cuz its better)
-        front_cascade = cv2.CascadeClassifier('data/haarcascade_frontalface_alt2.xml')
-        left_cascade = cv2.CascadeClassifier('data/haarcascade_profileface.xml')
+        # front_cascade = cv2.CascadeClassifier('data/haarcascade_frontalface_alt2.xml')
+        # left_cascade = cv2.CascadeClassifier('data/haarcascade_profileface.xml')
+        #
+        # front_faces = front_cascade.detectMultiScale(img, scaleFactor=None, minNeighbors=5)
+        # left_faces = left_cascade.detectMultiScale(cv2.flip(img, 1), scaleFactor=None, minNeighbors=5)
+        # right_faces = left_cascade.detectMultiScale(img, scaleFactor=None, minNeighbors=5)
+        #
+        # if front_faces is () and left_faces is () and right_faces is () and is_recording is False:
+        #     logger.warning("You are looking up or down, please look at the camera!")
+        #     logger.info("Setting stabilize count back to 0 and emptying calibrated angles")
+        #     calibrate_angle = []
+        #     stabilize_position = 0
+        #     is_recording = False
+        # else:
+        #     if front_faces is not ():
+        #         logger.warning("You are facing forward, tilt your head to YOUR left/right please")
+        #         logger.info("Setting stabilize count back to 0 and emptying calibrated angles")
+        #         calibrate_angle = []
+        #         stabilize_position = 0
+        #         is_recording = False
+        #     else:
+        #         if left_faces is not () or right_faces is not () and stabilize_position < DURATION_TO_STABILITZE:
+        #             stabilize_position += 1
 
-        front_faces = front_cascade.detectMultiScale(img, scaleFactor=None, minNeighbors=5)
-        left_faces = left_cascade.detectMultiScale(cv2.flip(img, 1), scaleFactor=None, minNeighbors=5)
-        right_faces = left_cascade.detectMultiScale(img, scaleFactor=None, minNeighbors=5)
+        # if stabilize_position >= DURATION_TO_STABILITZE:
+        if True:
 
-        if front_faces is () and left_faces is () and right_faces is () and is_recording is False:
-            logger.warning("You are looking up or down, please look at the camera!")
-            logger.info("Setting stabilize count back to 0 and emptying calibrated angles")
-            calibrate_angle = []
-            stabilize_position = 0
-            is_recording = False
-        else:
-            if front_faces is not ():
-                logger.warning("You are facing forward, tilt your head to YOUR left/right please")
-                logger.info("Setting stabilize count back to 0 and emptying calibrated angles")
-                calibrate_angle = []
-                stabilize_position = 0
-                is_recording = False
-            else:
-                if left_faces is not () or right_faces is not () and stabilize_position < DURATION_TO_STABILITZE:
-                    stabilize_position += 1
-
-        if stabilize_position >= DURATION_TO_STABILITZE:
-            logger.info(f"Camera Stabilizing, calibrating angles {len(calibrate_angle)}")
+            # logger.info(f"Camera Stabilizing, calibrating angles {len(calibrate_angle)}")
             faceboxes = mark_detector.extract_cnn_facebox(img)
             for facebox in faceboxes:
+
                 face_img = img[facebox[1]: facebox[3], facebox[0]: facebox[2]]
                 face_img = cv2.resize(face_img, (256, 256))
                 face_img = cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB)
@@ -455,7 +460,8 @@ while True:
                 shape = marks.astype(np.uint)
 
                 # Draw facial landmarks on face
-                # mark_detector.draw_marks(img, marks, color=(0, 255, 0))
+                mark_detector.draw_marks(img, marks, color=(0, 255, 0))
+
                 image_points = np.array([
                     shape[30],  # Nose tip
                     shape[8],  # Chin
@@ -476,8 +482,15 @@ while True:
 
                 p1 = (int(image_points[0][0]), int(image_points[0][1]))
                 p2 = (int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
-                draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
-                x1, x2 = draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
+                cv2.rectangle(img, (facebox[0], facebox[1]), (facebox[2], facebox[3]), (255, 8, 8), 1)
+                # draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
+                print(facebox)
+                x1, x2 = draw_annotation_box(img, (
+                                                (facebox[0], facebox[1]),
+                                                (facebox[2], facebox[1]),
+                                                (facebox[0], facebox[3]),
+                                                (facebox[2], facebox[3])
+                                                    ), rotation_vector, translation_vector, camera_matrix)
 
                 try:
                     m = (p2[1] - p1[1]) / (p2[0] - p1[0])
@@ -494,8 +507,8 @@ while True:
                     ang2 = 90
 
                 # this is for eyes, node, mouth and chin
-                # for p in image_points:
-                #     cv2.circle(img, (int(p[0]), int(p[1])), 3, (0, 0, 255), -1)
+                for p in image_points:
+                    cv2.circle(img, (int(p[0]), int(p[1])), 3, (0, 0, 255), -1)
 
                 # this is for... everything lol? over-rights the previous plots
                 # for (x, y) in shape:
@@ -511,24 +524,28 @@ while True:
                 # cv2.line(img, tuple(x1), tuple(x2), (255, 255, 0), 2)
                 # cv2.putText(img, str(ang2), tuple(x1), font, 2, (255, 255, 128), 3)
 
-                logger.info(f'Angle: {ang1}')
+                logger.info(f'Angle: {abs(ang1)}')
 
                 if len(calibrate_angle) >= NUMBER_OF_ANGLES_TO_CALIBRATE:
                     # proceed to calibrate
                     logger.info("proceed to calibrate")
                     is_recording = True
                     logger.info(np.mean(calibrate_angle))
+                    if abs(ang1) <= np.mean(calibrate_angle) + 20:
+                        logger.warning("Tilt your head back more!")
+                    else:
+                        logger.info("Alright... hold it for 5 seconds")
                 else:
                     if len(calibrate_angle) == 0 or \
                             np.mean(calibrate_angle) - 5 <= ang1 <= np.mean(calibrate_angle) + 5:
-                        calibrate_angle.append(ang1)
+                        calibrate_angle.append(abs(ang1))
                     else:
                         logger.warning("You are tilting your head too much")
                         logger.warning("Resetting calibrated angles")
                         calibrate_angle = []
 
-        else:
-            logger.info(f'Stabilising position {stabilize_position}')
+        # else:
+        #     logger.info(f'Stabilising position {stabilize_position}')
 
         cv2.imshow("Normal Frame", cv2.flip(img, 1))
 
@@ -542,148 +559,3 @@ while True:
 cv2.destroyAllWindows()
 vs.stream.release()
 vs.stop()
-
-# Without Threading
-# ret, img = cap.read()
-#
-# size = img.shape
-# font = cv2.FONT_HERSHEY_SIMPLEX
-#
-# # 3D model points.
-# model_points = np.array([
-#     (0.0, 0.0, 0.0),  # Nose tip
-#     (0.0, -330.0, -65.0),  # Chin
-#     (-225.0, 170.0, -135.0),  # Left eye left corner
-#     (225.0, 170.0, -135.0),  # Right eye right corne
-#     (-150.0, -150.0, -125.0),  # Left Mouth corner
-#     (150.0, -150.0, -125.0)  # Right mouth corner
-# ])
-#
-# # Camera internals
-# focal_length = size[1]
-# center = (size[1] / 2, size[0] / 2)
-# camera_matrix = np.array(
-#     [[focal_length, 0, center[0]],
-#      [0, focal_length, center[1]],
-#      [0, 0, 1]], dtype="double"
-# )
-#
-# while True:
-#
-#     ret, img = cap.read()
-#
-#     if ret:
-#
-#         # make sure you're facing the left/right/forward (i would suggest left/right cuz its better)
-#         front_cascade = cv2.CascadeClassifier('data/haarcascade_frontalface_alt2.xml')
-#         left_cascade = cv2.CascadeClassifier('data/haarcascade_profileface.xml')
-#
-#         front_faces = front_cascade.detectMultiScale(img, scaleFactor=None, minNeighbors=5)
-#         left_faces = left_cascade.detectMultiScale(cv2.flip(img, 1), scaleFactor=None, minNeighbors=5)
-#         right_faces = left_cascade.detectMultiScale(img, scaleFactor=None, minNeighbors=5)
-#
-#         # if front_faces is not ():
-#         #     print('FRONT FACE')
-#         # else:
-#         #     print("Front Face Not Detected!")
-#         #
-#         # if left_faces is not ():
-#         #     print('LEFT FACE')
-#         # else:
-#         #     print("Left Face Not Detected!")
-#         #
-#         # if right_faces is not ():
-#         #     print('RIGHT FACE')
-#         # else:
-#         #     print("Right Face Not Detected!")
-#
-#         cv2.imshow("Normal Frame", cv2.flip(img, 1))
-#
-#         # make sure you're seating upright
-#
-#         # calibrate angle for 10secs, don't move (if angle shift too much means you're moving too much)
-#
-#         # then start this
-#         '''
-#         faceboxes = mark_detector.extract_cnn_facebox(img)
-#         for facebox in faceboxes:
-#             face_img = img[facebox[1]: facebox[3], facebox[0]: facebox[2]]
-#             face_img = cv2.resize(face_img, (256, 256))
-#             face_img = cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB)
-#             marks = mark_detector.detect_marks([face_img])
-#             marks *= (facebox[2] - facebox[0])
-#             marks[:, 0] += facebox[0]
-#             marks[:, 1] += facebox[1]
-#             shape = marks.astype(np.uint)
-#
-#             # Draw facial landmarks on face
-#             # mark_detector.draw_marks(img, marks, color=(0, 255, 0))
-#             image_points = np.array([
-#                 shape[30],  # Nose tip
-#                 shape[8],  # Chin
-#                 shape[36],  # Left eye left corner
-#                 shape[45],  # Right eye right corner
-#                 shape[48],  # Left Mouth corner
-#                 shape[54]  # Right mouth corner
-#             ], dtype="double")
-#             dist_coeffs = np.zeros((4, 1))  # Assuming no lens distortion
-#             (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix,
-#                                                                           dist_coeffs, flags=cv2.SOLVEPNP_UPNP)
-#
-#             # Project a 3D point (0, 0, 1000.0) onto the image plane.
-#             # We use this to draw a line sticking out of the nose
-#
-#             (nose_end_point2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector,
-#                                                              translation_vector, camera_matrix, dist_coeffs)
-#
-#             p1 = (int(image_points[0][0]), int(image_points[0][1]))
-#             p2 = (int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
-#             draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
-#             x1, x2 = draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
-#
-#             try:
-#                 m = (p2[1] - p1[1]) / (p2[0] - p1[0])
-#                 ang1 = int(math.degrees(math.atan(m)))
-#             except:
-#                 print('div by zero error')
-#                 ang1 = 90
-#
-#             try:
-#                 m = (x2[1] - x1[1]) / (x2[0] - x1[0])
-#                 ang2 = int(math.degrees(math.atan(-1 / m)))
-#             except:
-#                 print('div by zero error')
-#                 ang2 = 90
-#
-#             # this is for eyes, node, mouth and chin
-#             # for p in image_points:
-#             #     cv2.circle(img, (int(p[0]), int(p[1])), 3, (0, 0, 255), -1)
-#
-#             # this is for... everything lol? over-rights the previous plots
-#             # for (x, y) in shape:
-#             #     cv2.circle(img, (x, y), 4, (255, 255, 0), -1)
-#
-#             # this is for line1
-#             cv2.line(img, p1, p2, (0, 255, 255), 2)
-#             cv2.putText(img, str(ang1), tuple(p1), font, 2, (128, 255, 255), 3)
-#             cv2.putText(img, str(p1), p1, font, 1, (0, 255, 255), 1)
-#             cv2.putText(img, str(p2), p2, font, 1, (0, 255, 255), 1)
-#
-#             # this is for line2
-#             # cv2.line(img, tuple(x1), tuple(x2), (255, 255, 0), 2)
-#             # cv2.putText(img, str(ang2), tuple(x1), font, 2, (255, 255, 128), 3)
-#
-#             print(ang1)
-#
-#         cv2.imshow('img', img)
-#         '''
-#
-#         if cv2.waitKey(1) & 0xFF == ord('q'):
-#             break
-#
-#     else:
-#
-#         break
-#
-# cv2.destroyAllWindows()
-# cap.release()
