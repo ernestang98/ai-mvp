@@ -9,6 +9,7 @@ from threading import Thread
 import cv2
 import math
 import logging
+import datetime
 
 logger = logging.getLogger('Beep-PCR-Test-Kit')
 logger.setLevel(logging.DEBUG)
@@ -18,12 +19,20 @@ logging.basicConfig(format="%(asctime)s — %(name)s — %(levelname)s — %(fun
 # https://www.pyimagesearch.com/2017/02/06/faster-video-file-fps-with-cv2-videocapture-and-opencv/
 # https://stackoverflow.com/questions/58293187/opencv-real-time-streaming-video-capture-is-slow-how-to-drop-frames-or-get-sync
 
+SPIT = False
+START_TIME_CALIBRATE = None
+END_TIME_CALIBRATE = None
+START_TIME_LOOK_UP = None
+END_TIME_LOOK_UP = None
 MARGIN_OF_ERR = 5
+DURATION_TO_CALIBRATE = 5
+DURATION_TO_LOOK_UP = 5
 NUMBER_OF_ANGLES_TO_CALIBRATE = 5
-DURATION_TO_STABILITZE = 5
+DURATION_TO_STABILIZE = 5
 stabilize_position = 0
 calibrate_angle = []
 is_recording = False
+DURATION_TO_TILT_HEAD_UP = 5
 
 
 class WebcamVideoStream:
@@ -382,9 +391,6 @@ def draw_annotation_box(img_to_draw_box_on, rec, x_rotation_vector, x_translatio
 # MarkDetector uses FaceDetector since you first need to detect the first
 mark_detector = MarkDetector()
 
-# Without Threading
-# cap = cv2.VideoCapture(0)
-
 # With Threading
 vs = WebcamVideoStream(src=0).start()
 
@@ -418,35 +424,7 @@ while True:
 
     if img is not ():
 
-        # make sure you're facing the left/right/forward (i would suggest left/right cuz its better)
-        # front_cascade = cv2.CascadeClassifier('data/haarcascade_frontalface_alt2.xml')
-        # left_cascade = cv2.CascadeClassifier('data/haarcascade_profileface.xml')
-        #
-        # front_faces = front_cascade.detectMultiScale(img, scaleFactor=None, minNeighbors=5)
-        # left_faces = left_cascade.detectMultiScale(cv2.flip(img, 1), scaleFactor=None, minNeighbors=5)
-        # right_faces = left_cascade.detectMultiScale(img, scaleFactor=None, minNeighbors=5)
-        #
-        # if front_faces is () and left_faces is () and right_faces is () and is_recording is False:
-        #     logger.warning("You are looking up or down, please look at the camera!")
-        #     logger.info("Setting stabilize count back to 0 and emptying calibrated angles")
-        #     calibrate_angle = []
-        #     stabilize_position = 0
-        #     is_recording = False
-        # else:
-        #     if front_faces is not ():
-        #         logger.warning("You are facing forward, tilt your head to YOUR left/right please")
-        #         logger.info("Setting stabilize count back to 0 and emptying calibrated angles")
-        #         calibrate_angle = []
-        #         stabilize_position = 0
-        #         is_recording = False
-        #     else:
-        #         if left_faces is not () or right_faces is not () and stabilize_position < DURATION_TO_STABILITZE:
-        #             stabilize_position += 1
-
-        # if stabilize_position >= DURATION_TO_STABILITZE:
         if True:
-
-            # logger.info(f"Camera Stabilizing, calibrating angles {len(calibrate_angle)}")
             faceboxes = mark_detector.extract_cnn_facebox(img)
             for facebox in faceboxes:
 
@@ -482,9 +460,9 @@ while True:
 
                 p1 = (int(image_points[0][0]), int(image_points[0][1]))
                 p2 = (int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
-                cv2.rectangle(img, (facebox[0], facebox[1]), (facebox[2], facebox[3]), (255, 8, 8), 1)
+                cv2.rectangle(img, (facebox[0], facebox[1]), (facebox[2], facebox[3]), (255, 255, 0), 2)
                 # draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
-                print(facebox)
+
                 x1, x2 = draw_annotation_box(img, (
                                                 (facebox[0], facebox[1]),
                                                 (facebox[2], facebox[1]),
@@ -526,26 +504,45 @@ while True:
 
                 logger.info(f'Angle: {abs(ang1)}')
 
-                if len(calibrate_angle) >= NUMBER_OF_ANGLES_TO_CALIBRATE:
-                    # proceed to calibrate
-                    logger.info("proceed to calibrate")
-                    is_recording = True
-                    logger.info(np.mean(calibrate_angle))
-                    if abs(ang1) <= np.mean(calibrate_angle) + 20:
-                        logger.warning("Tilt your head back more!")
-                    else:
-                        logger.info("Alright... hold it for 5 seconds")
+                if SPIT:
+                    # Wait 5 seconds....
+                    # SPIT = False
+                    logger.info("Think of a work around")
+                    pass
                 else:
-                    if len(calibrate_angle) == 0 or \
-                            np.mean(calibrate_angle) - 5 <= ang1 <= np.mean(calibrate_angle) + 5:
-                        calibrate_angle.append(abs(ang1))
-                    else:
-                        logger.warning("You are tilting your head too much")
-                        logger.warning("Resetting calibrated angles")
-                        calibrate_angle = []
+                    if END_TIME_CALIBRATE is None:
+                        END_TIME_CALIBRATE = datetime.datetime.now() + datetime.timedelta(seconds=DURATION_TO_CALIBRATE)
 
-        # else:
-        #     logger.info(f'Stabilising position {stabilize_position}')
+                    START_TIME_CALIBRATE = datetime.datetime.now()
+
+                    if START_TIME_CALIBRATE >= END_TIME_CALIBRATE:
+                        # proceed to calibrate
+                        logger.info("proceed to calibrate")
+                        is_recording = True
+                        logger.info(np.mean(calibrate_angle))
+                        if abs(ang1) <= np.mean(calibrate_angle) + 20:
+                            logger.warning("Tilt your head back more!")
+                            END_TIME_LOOK_UP = None
+                        else:
+                            START_TIME_LOOK_UP = datetime.datetime.now()
+                            if END_TIME_LOOK_UP is None:
+                                END_TIME_LOOK_UP = datetime.datetime.now() + datetime.timedelta(
+                                    seconds=DURATION_TO_LOOK_UP)
+                            if START_TIME_LOOK_UP >= END_TIME_LOOK_UP:
+                                logger.info("Alright... pls spit")
+                                END_TIME_LOOK_UP = None
+                                SPIT = True
+                            else:
+                                logger.info("Hold it up for 5 seconds")
+                    else:
+                        if len(calibrate_angle) == 0 or \
+                                np.mean(calibrate_angle) - 5 <= ang1 <= np.mean(calibrate_angle) + 5:
+                            calibrate_angle.append(abs(ang1))
+                        else:
+                            logger.warning("You are tilting your head too much")
+                            logger.warning("Resetting calibrated angles")
+                            calibrate_angle = []
+                            END_TIME_CALIBRATE = None
 
         cv2.imshow("Normal Frame", cv2.flip(img, 1))
 
