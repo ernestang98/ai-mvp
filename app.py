@@ -9,6 +9,7 @@ Debugging things
 Script tag position: https://stackoverflow.com/questions/5371047/getelementbyid-returns-null-even-though-the-element-exists?noredirect=1&lq=1
 Realtime data update: https://www.youtube.com/watch?v=E0UGGxd2DOo&t=213s
 Flask on localhost: https://stackoverflow.com/questions/30554702/cant-connect-to-flask-web-service-connection-refused
+On image load: https://stackoverflow.com/questions/280049/how-to-create-a-javascript-callback-for-knowing-when-an-image-is-loaded
 """
 
 import time

@@ -5,6 +5,24 @@
     height: 100vh;
 }
 
-#test {
+.text {
     margin: 50px 0;
+}
+
+#loading-text, #loading {
+    display: block;
+}
+
+#cv-text, #cv {
+    display: none;
+}
+
+#loading-text {
+    animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
 }

@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 
-
 {% block head %}
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
@@ -14,11 +13,18 @@
 
 {% block body %}
 <div class="main-container d-flex flex-column justify-content-center align-items-center">
-        <img src="{{ url_for('video_feed') }}">
-<!--    <video controls width="50%" height="auto">-->
-<!--        <source src="{{ url_for('static', filename = 'videos/sample.mp4') }}" TYPE="video/mp4">-->
-<!--    </video>-->
-    <h5 id="test"></h5>
+    <div>
+        <img id="cv" alt="" src="{{ url_for('video_feed') }}">
+    </div>
+    <div id="loading">
+        <img alt=""
+             src="https://media1.giphy.com/media/QPQ3xlJhqR1BXl89RG/giphy.gif">
+    </div>
+    <!--    <video controls width="50%" height="auto">-->
+    <!--        <source src="{{ url_for('static', filename = 'videos/sample.mp4') }}" TYPE="video/mp4">-->
+    <!--    </video>-->
+    <h5 id="cv-text" class="text">Calibrate angle...</h5>
+    <h5 id="loading-text" class="text">Loading...</h5>
     <div class="d-flex">
         <button onclick="recalibrate('ANGLE')" class="btn btn-primary mr-1">Recalibrate angle</button>
         <button onclick="recalibrate()" class="btn btn-secondary ml-1">Re-spit</button>
