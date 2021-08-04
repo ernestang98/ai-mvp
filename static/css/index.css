@@ -1,0 +1,10 @@
+.main-container {
+    background: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)),
+    url("https://images.axios.com/jmQMZKW0imHTE7fGjojNM5RljDw=/0x0:1920x1080/1920x1080/2021/02/09/1612914890762.gif");
+    background-size: cover;
+    height: 100vh;
+}
+
+#test {
+    margin: 50px 0;
+}
