@@ -32,6 +32,11 @@ host = ''
 test = 0
 message = "Calibrating your head position, look at the camera, do not tilt your head too much..."
 
+SPIT = False
+calibrate_angle = []
+END_TIME_CALIBRATE = None
+END_TIME_LOOK_UP = None
+
 
 @app.route('/')
 def index():
@@ -61,20 +66,39 @@ def get_updates():
         return jsonify({"status": "success!"})
 
 
+@app.route('/reset', methods=['POST'])
+def reset():
+    global SPIT, calibrate_angle, END_TIME_CALIBRATE, END_TIME_LOOK_UP
+    type_of_reset = request.json
+    type_of_reset = type_of_reset["type"]
+    if type_of_reset == "SPIT":
+        print("SPIT RESET")
+        SPIT = False
+        END_TIME_LOOK_UP = None
+    else:
+        print("ANGLE RESET")
+        calibrate_angle = []
+        SPIT = False
+        END_TIME_CALIBRATE = None
+        END_TIME_LOOK_UP = None
+    return jsonify({"status": "success!"})
+
+
 def gen():
     """Video streaming generator function."""
-    SPIT = False
+
+    """
+    Actual OpenCV Model
+    """
+    global SPIT, calibrate_angle, END_TIME_CALIBRATE, END_TIME_LOOK_UP
     START_TIME_CALIBRATE = None
-    END_TIME_CALIBRATE = None
     START_TIME_LOOK_UP = None
-    END_TIME_LOOK_UP = None
     MARGIN_OF_ERR = 5
     DURATION_TO_CALIBRATE = 5
     DURATION_TO_LOOK_UP = 5
     NUMBER_OF_ANGLES_TO_CALIBRATE = 5
     DURATION_TO_STABILIZE = 5
     stabilize_position = 0
-    calibrate_angle = []
     is_recording = False
     DURATION_TO_TILT_HEAD_UP = 5
     action = "Calibrating your head position, look at the camera, do not tilt your head too much..."
@@ -573,9 +597,12 @@ def gen():
                         if len(calibrate_angle) == 0 or \
                                 np.mean(calibrate_angle) - 5 <= ang1 <= np.mean(calibrate_angle) + 5:
                             calibrate_angle.append(abs(ang1))
+                            action = "Calibrating your head position, look at the camera, do not tilt your head too " \
+                                     "much... "
                         else:
                             logger.warning("You are tilting your head too much")
                             logger.warning("Resetting calibrated angles")
+                            action = "You are tilting your head too much..."
                             calibrate_angle = []
                             END_TIME_CALIBRATE = None
 

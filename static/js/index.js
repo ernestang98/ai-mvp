@@ -30,3 +30,19 @@ setInterval(() => {
     //     .catch(err => console.log(err))
 
 }, 1000)
+
+
+function recalibrate(toReset="SPIT") {
+    fetch("/reset", {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json'},
+        redirect: 'follow',
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify({"type": toReset})
+    }).then(response => response.json())
+        .then(data => console.log(data))
+        .catch(err => console.log(err))
+}

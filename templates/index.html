@@ -14,11 +14,15 @@
 
 {% block body %}
 <div class="main-container d-flex flex-column justify-content-center align-items-center">
-    <img src="{{ url_for('video_feed') }}">
-    <!--    <video controls width="50%" height="auto">-->
-    <!--        <source src="{{ url_for('static', filename = 'videos/sample.mp4') }}" TYPE="video/mp4">-->
-    <!--    </video>-->
-    <h5 id="test">atsdfasasdadasdasdukdg</h5>
+        <img src="{{ url_for('video_feed') }}">
+<!--    <video controls width="50%" height="auto">-->
+<!--        <source src="{{ url_for('static', filename = 'videos/sample.mp4') }}" TYPE="video/mp4">-->
+<!--    </video>-->
+    <h5 id="test"></h5>
+    <div class="d-flex">
+        <button onclick="recalibrate('ANGLE')" class="btn btn-primary mr-1">Recalibrate angle</button>
+        <button onclick="recalibrate()" class="btn btn-secondary ml-1">Re-spit</button>
+    </div>
 </div>
 {% endblock %}
 
