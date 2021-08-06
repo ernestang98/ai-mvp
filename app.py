@@ -23,6 +23,7 @@ import cv2
 import math
 import logging
 import datetime
+from message_color_coding import Message_Color_Coding
 
 logger = logging.getLogger('Beep-PCR-Test-Kit')
 logger.setLevel(logging.DEBUG)
@@ -31,7 +32,14 @@ logging.basicConfig(format="%(asctime)s — %(name)s — %(levelname)s — %(fun
 app = Flask(__name__)
 host = ''
 test = 0
-message = "Calibrating your head position, look at the camera, do not tilt your head too much..."
+message = "We are now calibrating your head position... Please refrain from moving your head..."
+message_2 = ""
+message_3 = ""
+
+message_color_code = Message_Color_Coding.GOOD.value
+message_2_color_code = Message_Color_Coding.GOOD.value
+message_3_color_code = Message_Color_Coding.GOOD.value
+
 
 SPIT = False
 calibrate_angle = []
@@ -56,14 +64,27 @@ def video_feed():
 
 @app.route('/status', methods=['GET', 'POST'])
 def get_updates():
-    global test, message
+    global test, message, message_2, message_3, message_color_code, message_2_color_code, message_3_color_code
     if request.method == 'GET':
         update = message
-        return jsonify({"status": update})
+        update_2 = message_2
+        update_3 = message_3
+        return jsonify({
+            "status": update,
+            "status_2": update_2,
+            "status_3": update_3,
+            "status_code": message_color_code,
+            "status_2_code": message_2_color_code,
+            "status_3_code": message_3_color_code,
+        })
     elif request.method == 'POST':
         data = request.json
-        if message != data["message"]:
-            message = data["message"]
+        message = data["message"]
+        message_2 = data["message_2"]
+        message_3 = data["message_3"]
+        message_color_code = data["message_color_code"]
+        message_2_color_code = data["message_2_color_code"]
+        message_3_color_code = data["message_3_color_code"]
         return jsonify({"status": "success!"})
 
 
@@ -102,7 +123,13 @@ def gen():
     stabilize_position = 0
     is_recording = False
     DURATION_TO_TILT_HEAD_UP = 5
-    action = "Calibrating your head position, look at the camera, do not tilt your head too much..."
+    action = "Calibrating your head position, look straight at the camera, do not tilt your head too much..."
+    action_2 = ""
+    action_3 = ""
+
+    action_code = Message_Color_Coding.GOOD
+    action_2_code = Message_Color_Coding.GOOD
+    action_3_code = Message_Color_Coding.GOOD
 
     class WebcamVideoStream:
         def __init__(self, src=0):
@@ -485,7 +512,14 @@ def gen():
     while vs.stream.isOpened():
         img = vs.read()
         assert host is not ''
-        requests.post(host + '/status', json={"message": action})
+        requests.post(host + '/status', json={
+            "message": action,
+            "message_2": action_2,
+            "message_3": action_3,
+            "message_color_code": action_code.value,
+            "message_2_color_code": action_2_code.value,
+            "message_3_color_code": action_3_code.value
+        })
 
         if img is not ():
 
@@ -526,9 +560,8 @@ def gen():
                 p1 = (int(image_points[0][0]), int(image_points[0][1]))
                 p2 = (int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
                 cv2.rectangle(img, (facebox[0], facebox[1]), (facebox[2], facebox[3]), (255, 255, 0), 2)
-                # draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
 
-                x1, x2 = draw_annotation_box(img, (
+                draw_annotation_box(img, (
                     (facebox[0], facebox[1]),
                     (facebox[2], facebox[1]),
                     (facebox[0], facebox[3]),
@@ -547,10 +580,6 @@ def gen():
                 for p in image_points:
                     cv2.circle(img, (int(p[0]), int(p[1])), 3, (0, 0, 255), -1)
 
-                # this is for... everything lol? over-rights the previous plots
-                # for (x, y) in shape:
-                #     cv2.circle(img, (x, y), 4, (255, 255, 0), -1)
-
                 # this is for line1
                 cv2.line(img, p1, p2, (0, 255, 255), 2)
                 cv2.putText(img, str(ang1), tuple(p1), font, 2, (128, 255, 255), 3)
@@ -562,7 +591,7 @@ def gen():
                 if SPIT:
                     # Wait 5 seconds....
                     # SPIT = False
-                    logger.info("Think of a work around")
+                    logger.info("Work around for now: Press Re-Spit button!")
                     pass
                 else:
                     if END_TIME_CALIBRATE is None:
@@ -572,13 +601,15 @@ def gen():
                     START_TIME_CALIBRATE = datetime.datetime.now()
 
                     if START_TIME_CALIBRATE >= END_TIME_CALIBRATE:
-                        action = "Position calibration done! Tilt your head upwards"
                         # proceed to calibrate
                         logger.info("proceed to calibrate")
-                        is_recording = True
                         logger.info(np.mean(calibrate_angle))
+                        action = "Head position calibration done, time to collect your saliva! Tilt your head " \
+                                 "upwards "
+                        action_code = Message_Color_Coding.WAITING
                         if abs(ang1) <= np.mean(calibrate_angle) + 20:
-                            action = "Position calibration done! Tilt your head more"
+                            action_2 = "You are not tilting upward enough... tilt more!"
+                            action_2_code = Message_Color_Coding.BAD
                             logger.warning("Tilt your head back more!")
                             END_TIME_LOOK_UP = None
                         else:
@@ -587,23 +618,32 @@ def gen():
                                 END_TIME_LOOK_UP = datetime.datetime.now() + datetime.timedelta(
                                     seconds=DURATION_TO_LOOK_UP)
                             if START_TIME_LOOK_UP >= END_TIME_LOOK_UP:
-                                action = "Alright please spit and repeat..."
+                                action = "Alright please spit into the test kit"
+                                action_code = Message_Color_Coding.GOOD
+
+                                action_2 = "Once you are done, press the 'Re-Spit' button and repeat the process" \
+                                           " till your saliva test kit is filled "
+                                action_2_code = Message_Color_Coding.GOOD
                                 logger.info("Alright... pls spit")
                                 END_TIME_LOOK_UP = None
                                 SPIT = True
                             else:
-                                action = "Hold it there for 5 seconds..."
+                                action_2 = "Hold it there for 5 seconds..."
+                                action_2_code = Message_Color_Coding.WAITING
                                 logger.info("Hold it up for 5 seconds")
                     else:
+                        action = "Calibrating your head position, look straight at the camera"
+                        action_code = Message_Color_Coding.BAD
                         if len(calibrate_angle) == 0 or \
                                 np.mean(calibrate_angle) - 5 <= ang1 <= np.mean(calibrate_angle) + 5:
                             calibrate_angle.append(abs(ang1))
-                            action = "Calibrating your head position, look at the camera, do not tilt your head too " \
-                                     "much... "
+                            action_2 = "Great job! Keep your head there... don't move about too much!"
+                            action_2_code = Message_Color_Coding.GOOD
                         else:
                             logger.warning("You are tilting your head too much")
                             logger.warning("Resetting calibrated angles")
-                            action = "You are tilting your head too much..."
+                            action_2 = "You are tilting your head too much... Please stabilize your head position"
+                            action_2_code = Message_Color_Coding.BAD
                             calibrate_angle = []
                             END_TIME_CALIBRATE = None
 
@@ -625,3 +665,5 @@ def gen():
     #     frame = cv2.imencode('.jpg', img)[1].tobytes()
     #     yield b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
     #     time.sleep(0.1)
+
+# FLASK_APP=app.py FLASK_ENV=development flask run

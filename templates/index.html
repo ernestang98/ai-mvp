@@ -23,11 +23,15 @@
     <!--    <video controls width="50%" height="auto">-->
     <!--        <source src="{{ url_for('static', filename = 'videos/sample.mp4') }}" TYPE="video/mp4">-->
     <!--    </video>-->
-    <h5 id="cv-text" class="text">Calibrate angle...</h5>
-    <h5 id="loading-text" class="text">Loading...</h5>
+    <div class="text">
+        <h2 id="loading-text">Loading...</h2>
+        <h2 id="cv-text">Calibrate angle...</h2>
+        <h6 id="cv-text_2"></h6>
+        <h6 id="cv-text_3"></h6>
+    </div>
     <div class="d-flex">
         <button onclick="recalibrate('ANGLE')" class="btn btn-primary mr-1">Recalibrate angle</button>
-        <button onclick="recalibrate()" class="btn btn-secondary ml-1">Re-spit</button>
+        <button onclick="recalibrate()" class="btn btn-secondary ml-1">Re-Spit</button>
     </div>
 </div>
 {% endblock %}

@@ -24,14 +24,17 @@ const img = document.getElementById('cv')
 const imgLoading = document.getElementById('loading')
 
 const imgText = document.getElementById('cv-text')
+const imgText_2 = document.getElementById('cv-text_2')
+const imgText_3 = document.getElementById('cv-text_3')
 const imgLoadingText = document.getElementById('loading-text')
 
 function loaded() {
-    alert('loaded')
     imgLoading.style.display = "none"
     img.style.display = "block"
     imgLoadingText.style.display = "none"
     imgText.style.display = "block"
+    imgText_2.style.display = "block"
+    imgText_3.style.display = "block"
 
     setInterval(() => {
 
@@ -39,6 +42,13 @@ function loaded() {
             .then(response => response.json())
             .then(data => {
                 document.getElementById("cv-text").innerHTML = data["status"]
+                document.getElementById("cv-text").style.setProperty('color', data["status_code"])
+
+                document.getElementById("cv-text_2").innerHTML = data["status_2"]
+                document.getElementById("cv-text_2").style.setProperty('color', data["status_2_code"])
+
+                document.getElementById("cv-text_3").innerHTML = data["status_3"]
+                document.getElementById("cv-text_3").style.setProperty('color', data["status_3_code"])
                 console.log(data)
             })
             .catch(err => console.log(err))
@@ -57,7 +67,7 @@ function loaded() {
         //     .then(data => console.log(data))
         //     .catch(err => console.log(err))
 
-    }, 1000)
+    }, 500)
 }
 
 if (img.complete) {
