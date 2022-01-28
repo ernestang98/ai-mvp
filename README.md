@@ -14,4 +14,4 @@ Developed as a minimum viable product to explore the possibility of using AI/Com
 
 - [Head Pose Estimator](https://towardsdatascience.com/real-time-head-pose-estimation-in-python-e52db1bc606a)
 
-- [Demo (NOT AVAILABLE YET)]()
+- [Demo](https://www.youtube.com/watch?v=9FRcnVpq_HE&feature=youtu.be)
