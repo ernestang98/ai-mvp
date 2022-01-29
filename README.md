@@ -4,17 +4,17 @@ Developed as a minimum viable product to explore the possibility of using AI/Com
 
 ### Technology:
 
-- OpenCV (Camera Stream)
+- OpenCV (Camera stream)
 
-- Caffe Deep Learning (Face Detector)
+- Caffe Deep Learning (Face detector)
 
-- Convolutional Neural Network (Landmarks Detector)
+- Convolutional Neural Network (Landmarks detector)
 
 - Multithreading (Reduce lag and increase frame speed)
 
-- Flask (deployment platform)
+- Flask (Deployment platform)
 
-- Numpy (Basic linear algebra to map 2D screen to 3D space)
+- Numpy (Linear algebra to map 2D screen to 3D space)
 
 ### Resources:
 
