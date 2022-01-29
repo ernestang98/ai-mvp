@@ -8,7 +8,7 @@ Developed as a minimum viable product to explore the possibility of using AI/Com
 
 - Flask (deployment platform)
 
-- Basic linear algebra (mapping of 2D screen to 3D space)
+- Numpy (Basic linear algebra to map 2D screen to 3D space)
 
 ### Resources:
 
